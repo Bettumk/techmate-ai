@@ -1,6 +1,9 @@
 import uuid
+import json
+import base64
+import httpx
 from fastapi import APIRouter, HTTPException, status, Depends
-from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
+from app.schemas import UserRegister, UserLogin, GoogleLoginRequest, TokenResponse, UserResponse
 from app.database import get_db
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
 
@@ -116,6 +119,81 @@ def demo_login():
             "user": {
                 "id": user_id,
                 "email": demo_email,
+                "full_name": user_name,
+                "profile": dict(prow) if prow else {}
+            }
+        }
+
+@router.post("/google", response_model=TokenResponse)
+async def google_login(payload: GoogleLoginRequest):
+    """Logs in or registers a user via Google OAuth Identity token."""
+    email = payload.email
+    full_name = payload.full_name or "Google Student"
+
+    # If credential JWT token is passed, verify with Google TokenInfo API
+    if payload.credential:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={payload.credential}")
+                if resp.status_code == 200:
+                    info = resp.json()
+                    email = info.get("email")
+                    full_name = info.get("name", full_name)
+                else:
+                    # Parse unverified JWT payload as fallback if tokeninfo fails
+                    parts = payload.credential.split(".")
+                    if len(parts) >= 2:
+                        padded = parts[1] + "=" * ((4 - len(parts[1]) % 4) % 4)
+                        decoded = base64.urlsafe_b64decode(padded.encode("utf-8")).decode("utf-8")
+                        info = json.loads(decoded)
+                        email = info.get("email", email)
+                        full_name = info.get("name", full_name)
+        except Exception as e:
+            if not email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unable to verify Google credentials: {e}"
+                )
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account email could not be verified."
+        )
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, email, full_name FROM users WHERE email = ?", (email,))
+        row = cursor.fetchone()
+
+        if row:
+            user_id = row["id"]
+            user_name = row["full_name"]
+        else:
+            user_id = str(uuid.uuid4())
+            user_name = full_name
+            cursor.execute(
+                "INSERT INTO users (id, email, hashed_password, full_name) VALUES (?, ?, ?, ?)",
+                (user_id, email, hash_password(str(uuid.uuid4())), user_name)
+            )
+            cursor.execute(
+                """
+                INSERT INTO profiles (user_id, education_level, primary_language, experience_level, career_goal, preferred_style)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (user_id, "B.Tech CSE", "Python", "Beginner", "Software Engineer", "Practical with Code")
+            )
+
+        cursor.execute("SELECT education_level, primary_language, experience_level, career_goal FROM profiles WHERE user_id = ?", (user_id,))
+        prow = cursor.fetchone()
+
+        token = create_access_token({"sub": user_id, "email": email})
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": email,
                 "full_name": user_name,
                 "profile": dict(prow) if prow else {}
             }

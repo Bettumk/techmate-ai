@@ -84,6 +84,15 @@ class ApiClient {
     return res;
   }
 
+  async googleLogin(data: { credential?: string; email?: string; full_name?: string }) {
+    const res = await this.request<{ access_token: string; user: User }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    this.setToken(res.access_token);
+    return res;
+  }
+
   async getMe(): Promise<User> {
     return this.request<User>('/auth/me');
   }
