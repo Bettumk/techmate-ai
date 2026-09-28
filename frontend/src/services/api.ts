@@ -238,6 +238,20 @@ class ApiClient {
   async getPracticeSessions(): Promise<any[]> {
     return this.request<any[]>('/practice/sessions');
   }
+
+  // Code Sandbox Execution
+  async executeCode(data: { code: string; language: string; input_data?: string }): Promise<{
+    status: string;
+    stdout: string;
+    stderr: string;
+    execution_time_ms: number;
+    language: string;
+  }> {
+    return this.request('/code/run', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiClient();

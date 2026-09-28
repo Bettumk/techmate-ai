@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { api } from '../services/api';
+import { exportDocumentToPdf } from '../utils/exportPdf';
 import {
   Compass,
   ArrowRight,
@@ -10,7 +11,8 @@ import {
   Sparkles,
   GitBranch,
   Layers,
-  Award
+  Award,
+  FileDown
 } from 'lucide-react';
 
 export const CareerView: React.FC = () => {
@@ -43,6 +45,16 @@ export const CareerView: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExportPdf = () => {
+    if (!result) return;
+    exportDocumentToPdf({
+      title: `${selectedRole} Career Roadmap`,
+      subtitle: 'Phased Milestones, Skills Checklist & Portfolio Strategy',
+      category: 'Career & Industry Engineering Pathway',
+      content: result,
+    });
   };
 
   return (
@@ -85,25 +97,39 @@ export const CareerView: React.FC = () => {
       </div>
 
       {/* Roadmap Content Panel */}
-      <div className="p-6 md:p-8 rounded-2xl bg-slate-900/80 border border-slate-800 min-h-[450px]">
-        {isLoading ? (
-          <div className="h-64 flex flex-col items-center justify-center text-center">
-            <span className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></span>
-            <p className="text-xs text-slate-400">TechMate Career Agent is designing your roadmap for {selectedRole}...</p>
-          </div>
-        ) : result ? (
-          <div className="markdown-body text-xs md:text-sm leading-relaxed">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {result}
-            </ReactMarkdown>
-          </div>
-        ) : (
-          <div className="h-64 flex flex-col items-center justify-center text-center text-slate-400">
-            <Compass className="w-12 h-12 opacity-20 mb-3" />
-            <p className="text-sm font-semibold text-slate-300">Explore Role Roadmap</p>
-            <p className="text-xs text-slate-400 mt-1">Select any engineering role above to generate a zero-fluff step-by-step career path.</p>
+      <div className="p-6 md:p-8 rounded-2xl bg-slate-900/80 border border-slate-800 min-h-[450px] flex flex-col">
+        {result && (
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+            <span className="text-xs font-bold text-slate-300">{selectedRole} Career Blueprint</span>
+            <button
+              onClick={handleExportPdf}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-xs text-purple-300 border border-purple-500/30 transition-colors"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>Download PDF</span>
+            </button>
           </div>
         )}
+
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="h-64 flex flex-col items-center justify-center text-center">
+              <span className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></span>
+              <p className="text-xs text-slate-400">TechMate Career Agent is designing your roadmap for {selectedRole}...</p>
+            </div>
+          ) : result ? (
+            <div className="markdown-body text-xs md:text-sm leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {result}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-center text-slate-400">
+              <Compass className="w-10 h-10 opacity-20 mb-3" />
+              <p className="text-xs">Select your target engineering role above to generate an actionable step-by-step roadmap.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

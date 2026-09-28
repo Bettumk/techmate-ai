@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { api } from '../services/api';
 import { Project } from '../types';
+import { exportDocumentToPdf } from '../utils/exportPdf';
 import {
   FolderGit2,
   Plus,
@@ -13,7 +14,9 @@ import {
   Server,
   HelpCircle,
   FolderTree,
-  Send
+  Send,
+  FileDown,
+  Award
 } from 'lucide-react';
 
 interface ProjectViewProps {
@@ -189,9 +192,26 @@ export const ProjectView: React.FC<ProjectViewProps> = ({ onOpenProjectInChat })
               <div>
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-bold text-white">{selectedProject.title}</h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                    {selectedProject.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        exportDocumentToPdf({
+                          title: selectedProject.title,
+                          subtitle: selectedProject.description || 'Full-Stack Software Architecture & Engineering Blueprint',
+                          category: 'Software Engineering Project Studio',
+                          content: `### Technology Stack\n\`${selectedProject.tech_stack || 'FastAPI, PostgreSQL, React'}\`\n\n### System Overview\n${selectedProject.description || ''}\n\n### Architecture & Database Design\nDetailed specifications and endpoints recorded in TechMate Project Studio.`,
+                        });
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-xs text-purple-300 border border-purple-500/30 transition-colors"
+                      title="Download Project Blueprint PDF"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Download PDF</span>
+                    </button>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      {selectedProject.status}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
                   {selectedProject.description || 'Full-stack software architecture and schema.'}

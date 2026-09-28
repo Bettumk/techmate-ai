@@ -16,6 +16,7 @@ from app.routers.document_router import router as document_router
 from app.routers.interview_router import router as interview_router
 from app.routers.practice_router import router as practice_router
 from app.routers.profile_router import router as profile_router
+from app.routers.code_router import router as code_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("techmate")
@@ -54,6 +55,7 @@ app.include_router(document_router)
 app.include_router(interview_router)
 app.include_router(practice_router)
 app.include_router(profile_router)
+app.include_router(code_router)
 
 @app.get("/api/health")
 def health():

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { api } from '../services/api';
+import { exportDocumentToPdf } from '../utils/exportPdf';
 import {
   BookOpen,
   Sparkles,
@@ -192,7 +193,24 @@ export const StudyExamView: React.FC = () => {
               <FileCheck className="w-4 h-4 text-emerald-400" />
               <h3 className="text-sm font-bold text-white">Formatted Exam Paper Answer</h3>
             </div>
-            {result && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (!result) return;
+                  exportDocumentToPdf({
+                    title: `${subject} - ${topic}`,
+                    subtitle: `${marks} Marks Comprehensive Exam Answer | Difficulty: ${difficulty}`,
+                    category: 'University Examination Answer',
+                    content: result,
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-xs text-emerald-400 border border-emerald-500/30 transition-colors"
+                title="Download formatted printable PDF"
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>Download PDF</span>
+              </button>
+
               <button
                 onClick={copyContent}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors"
@@ -200,7 +218,7 @@ export const StudyExamView: React.FC = () => {
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
-            )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
